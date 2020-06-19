@@ -6,9 +6,9 @@ const userSchema = new Schema({
   password: {type: String,required: true},
   name: {type: String,required: true},
   role: {type: String},
+  type: {type: String},
   username: {type: String,required: true},
   dob:{type: Date},
-  public: {type: Boolean},
   age: {type:Number},
   addresses: [{
     type: {type:String, enum: ['Shipping', 'Billing']},
@@ -23,29 +23,10 @@ const userSchema = new Schema({
   }],
   contact: {
     phone: {type: String},
-    phone2: {type: String},
-    email: {type: String,required: true},
+    email: {type: String,required: true}
   },
-  bio: {type: String},
-  profileImages: [{
-    name: {type:String},
-    type: {type: String},
-    path: {type: String},
-    public: {type: Boolean},
-    _id : false
-  }],
-  socialMedia: [{
-    platform: {type:String},
-    handle: {type:String},
-    link: {type: String},
-    _id : false
-  }],
   interests: [{type: String}],
-  perks: [{type: Schema.Types.ObjectId,ref: 'Perk'}],
-  promos: [{type: Schema.Types.ObjectId,ref: 'Promo'}],
-  friends:[{type: Schema.Types.ObjectId,ref: 'User'}],
   points: {type: Number},
-  tags: [{type: String}],
   loggedIn: {type: Boolean},
   clientConnected: {type: Boolean},
   verification:{
@@ -53,49 +34,10 @@ const userSchema = new Schema({
     type:{type: String},
     code:{type: String}
   },
-  activity:[{
-    date: {type: Date},
-    request: {type: String},
-    _id : false
-  }],
-  likedLessons: [{type: Schema.Types.ObjectId,ref: 'Lesson'}],
-  bookedLessons: [{
-    date: {type: Date},
-    session:{
-      title: {type: String},
-      date: {type: Date},
-      time: {type: String}
-    },
-    ref: {type: Schema.Types.ObjectId,ref: 'Lesson'},
-    _id : false
-  }],
-  attendedLessons: [{
-    date: {type: Date},
-    ref: {type: Schema.Types.ObjectId,ref: 'Lesson'},
-    _id : false
-  }],
-  taughtLessons: [{
-    date: {type: Date},
-    ref: {type: Schema.Types.ObjectId,ref: 'Lesson'},
-    _id : false
-  }],
-  toTeachLessons: [{type: Schema.Types.ObjectId,ref: 'Lesson'}],
-  wishlist: [{
-    date: {type: Date},
-    ref: {type: Schema.Types.ObjectId,ref: 'Lesson'},
-    booked: {type: Boolean},
-    _id : false
-  }],
-  cart: [{
-    dateAdded: {type: Date},
-    sessionDate: {type: Date},
-    sessionTitle: {type: String},
-    lesson: {type: Schema.Types.ObjectId,ref: 'Lesson'},
-    _id : false
-  }],
+  wishlist: [{type: Schema.Types.ObjectId,ref: 'Product'}],
+  liked: [{type: Schema.Types.ObjectId,ref: 'Product'}],
+  cart: [{type: Schema.Types.ObjectId,ref: 'Product'}],
   reviews: [{type: Schema.Types.ObjectId,ref: 'Review'}],
-  comments: [{type: Schema.Types.ObjectId,ref: 'Comment'}],
-  messages: [{type: Schema.Types.ObjectId,ref: 'Message'}],
   orders: [{type: Schema.Types.ObjectId,ref: 'Order'}],
   paymentInfo: [{
     date: {type: Date},
@@ -104,12 +46,6 @@ const userSchema = new Schema({
     body: {type: String},
     valid: {type: Boolean},
     primary: {type: Boolean},
-    _id : false
-  }],
-  friendRequests: [{
-    date: {type: Date},
-    sender: {type: Schema.Types.ObjectId,ref: 'User'},
-    receiver: {type: Schema.Types.ObjectId,ref: 'User'},
     _id : false
   }],
   affiliate: {
@@ -122,14 +58,11 @@ const userSchema = new Schema({
     reward: {type: Number},
     _id : false
   },
-  cancellations: [{
-    date: {type: String},
-    reason: {type: String},
-    sessionDate: {type: Date},
-    sessionTitle: {type: String},
-    lesson: {type: Schema.Types.ObjectId,ref: 'Lesson'}
+  activity:[{
+    date: {type: Date},
+    request: {type: String},
+    _id : false
   }],
-  notifications: [{type: Schema.Types.ObjectId,ref: 'Notification'}]
 },
   { timestamps: true }
 );
