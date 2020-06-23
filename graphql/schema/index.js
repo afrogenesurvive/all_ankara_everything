@@ -38,7 +38,7 @@ module.exports = buildSchema(`
     city: String
     country: String
     postalCode: String
-    primary: String
+    primary: Boolean
   }
   type UserContact {
     phone: String
@@ -89,7 +89,7 @@ module.exports = buildSchema(`
     addressCity: String
     addressCountry: String
     addressPostalCode: String
-    addressPrimary: String
+    addressPrimary: Boolean
     contactPhone: String
     contactEmail: String
     bio: String

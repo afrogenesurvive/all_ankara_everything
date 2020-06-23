@@ -434,6 +434,11 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
+      let dob = moment(args.userInput.dob).format('YYYY-MM-DD');
+      let dob2 = new Date(args.userInput.dob);
+      let ageDifMs = new Date() - dob2.getTime();
+      let ageDate = new Date(ageDifMs);
+      let age =  Math.abs(ageDate.getUTCFullYear() - 1970);
 
       const user = await User.findOneAndUpdate(
         {_id:args.userId},
@@ -442,8 +447,8 @@ module.exports = {
           role: args.userInput.role,
           type: args.userInput.type,
           username: args.userInput.username,
-          dob: args.userInput.dob,
-          age: args.userInput.age,
+          dob: dob,
+          age: age,
           contact: {
             email: args.userInput.contactEmail,
             phone: args.userInput.contactPhone,
@@ -473,9 +478,21 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
+      let query =  '';
       const resolverField = args.field;
       const resolverQuery = args.query;
-      const query = {[resolverField]:resolverQuery};
+      query = {[resolverField]:resolverQuery};
+      if (args.field === 'dob') {
+        let dob = moment(args.query).format('YYYY-MM-DD');
+        let dob2 = new Date(args.query);
+        let ageDifMs = new Date() - dob2.getTime();
+        let ageDate = new Date(ageDifMs);
+        let age =  Math.abs(ageDate.getUTCFullYear() - 1970);
+        query = {
+          dob: dob,
+          age: age
+        }
+      }
       const user = await User.findOneAndUpdate(
         {_id:args.userId},
         query,
@@ -496,7 +513,406 @@ module.exports = {
       throw err;
     }
   },
-  createUser: async (args, req) => {
+  addUserAddress: async (args, req) => {
+    console.log("Resolver: addUserAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const address = {
+        type: args.userInput.addressType,
+        number: args.userInput.addressNumber,
+        street: args.userInput.addressStreet,
+        town: args.userInput.addressTown,
+        city: args.userInput.addressCity,
+        country: args.userInput.addressCountry,
+        postalCode: args.userInput.addressPostalCode,
+        primary: false
+      };
+
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$addToSet: {addresses: address}},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        name: user.name,
+        username: user.username,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteUserAddress: async (args, req) => {
+    console.log("Resolver: deleteUserAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      // const activityUser = await User.findById({_id: args.activityId});
+      // if (activityUser.role !== "Admin" && args.activityId !== args.userId) {
+      //   throw new Error("Yaah.. No! Only the owner or Admin can delete a User Address");
+      // };
+        const address = {
+          type: args.userInput.addressType,
+          number: args.userInput.addressNumber,
+          street: args.userInput.addressStreet,
+          town: args.userInput.addressTown,
+          city: args.userInput.addressCity,
+          country: args.userInput.addressCountry,
+          postalCode: args.userInput.addressPostalCode,
+          primary: args.userInput.addressPrimary
+        };
+        const user = await User.findOneAndUpdate(
+          {_id:args.userId},
+          {$pull: { 'addresses': address }},
+          {new: true, useFindAndModify: false}
+        )
+        .populate('wishlist')
+        .populate('liked')
+        .populate('cart')
+        .populate('reviews')
+        .populate('orders')
+        .populate('affiliate.referrer');
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  setUserAddressPrimary: async (args, req) => {
+    console.log("Resolver: setUserAddressPrimary...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const nerfLikeAddresses = await User.findOneAndUpdate(
+        {_id: args.userId, 'addresses.type':args.userInput.addressType},
+        {$set: {'addresses.$[elem].primary': false}},
+        {
+          arrayFilters: [ { "elem.type": args.userInput.addressType } ],
+          new: true,
+          useFindAndModify: false
+        }
+      )
+      const address = {
+        type: args.userInput.addressType,
+        number: args.userInput.addressNumber,
+        street: args.userInput.addressStreet,
+        town: args.userInput.addressTown,
+        city: args.userInput.addressCity,
+        country: args.userInput.addressCountry,
+        postalCode: args.userInput.addressPostalCode,
+        primary: args.userInput.addressPrimary,
+      };
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId,
+          addresses: address
+        },
+        {'addresses.$.primary': true},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addUserPoints: async (args, req) => {
+    console.log("Resolver: addUserPoints...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const activityUser = await User.findById({_id: args.activityId});
+      if (activityUser.role !== "Admin") {
+        throw new Error("How'd you find this!? Silly User. Tokens are for Admin");
+      }
+      const prevAmountUser = await User.findById({_id: args.userId});
+      const prevAmount = prevAmountUser.points;
+      const amountToAdd = args.userInput.points;
+      let newAmount = prevAmount + amountToAdd;
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        { points: newAmount },
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+addUserPaymentInfo: async (args, req) => {
+    console.log("Resolver: addUserPaymentInfo...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const paymentInfo = {
+        date: moment().format('YYYY-MM-DD'),
+        type: args.userInput.paymentInfoType,
+        description: args.userInput.paymentInfoDescription,
+        body: args.userInput.paymentInfoBody,
+        valid: args.userInput.paymentInfoValid,
+        primary: false,
+      };
+      console.log('paymentInfo',paymentInfo);
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$addToSet: {paymentInfo: paymentInfo}},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+
+      return {
+        ...user._doc,
+        _id: user.id,
+        name: user.name,
+        username: user.username,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+deleteUserPaymentInfo: async (args, req) => {
+    console.log("Resolver: deleteUserPaymentInfo...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const activityUser = await User.findById({_id: args.activityId});
+      if (activityUser.role !== "Admin" && args.activityId !== args.userId) {
+        throw new Error("Yaah.. No! Only the owner or Admin can delete a User PaymentInfo");
+      };
+        const paymentInfo = {
+          date: args.userInput.paymentInfoDate,
+          type: args.userInput.paymentInfoType,
+          description: args.userInput.paymentInfoDescription,
+          body: args.userInput.paymentInfoBody,
+          valid: args.userInput.paymentInfoValid,
+          primary: args.userInput.paymentInfoPrimary,
+        };
+        const user = await User.findOneAndUpdate(
+          {_id:args.userId},
+          {$pull: { 'paymentInfo': paymentInfo }},
+          {new: true, useFindAndModify: false}
+        )
+        .populate('wishlist')
+        .populate('liked')
+        .populate('cart')
+        .populate('reviews')
+        .populate('orders')
+        .populate('affiliate.referrer');
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+setUserPaymentInfoPrimary: async (args, req) => {
+    console.log("Resolver: setUserPaymentInfoPrimary...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const nerfAllPaymentInfo = await User.findOneAndUpdate(
+        {_id: args.userId},
+        {'paymentInfo.$[].primary': false},
+        {new: true, useFindAndModify: false}
+      )
+      const paymentInfo = {
+        date: args.userInput.date,
+        type: args.userInput.paymentInfoType,
+        description: args.userInput.paymentInfoDescription,
+        body: args.userInput.paymentInfoBody,
+        valid: args.userInput.paymentInfoValid,
+        primary: true
+      };
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId,
+          paymentInfo: paymentInfo
+        // 'paymentInfo.type': paymentInfo.type,
+        // 'paymentInfo.description': paymentInfo.description,
+        // 'paymentInfo.body': paymentInfo.body,
+        },
+        {'paymentInfo.$.primary': true},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+addUserInterests: async (args, req) => {
+    console.log("Resolver: addUserInterests...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const interests = args.userInput.interests;
+      const splitInterests = interests.split(",");
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$addToSet: { interests: {$each: splitInterests} }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email ,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+deleteUserInterest: async (args, req) => {
+    console.log("Resolver: deleteUserInterest...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+        const interest = args.userInput.interest;
+        const user = await User.findOneAndUpdate(
+          {_id:args.userId},
+          {$pull: { interests: interest }},
+          {new: true, useFindAndModify: false}
+        )
+        .populate('wishlist')
+        .populate('liked')
+        .populate('cart')
+        .populate('reviews')
+        .populate('orders')
+        .populate('affiliate.referrer');
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+addUserActivity: async (args, req) => {
+    console.log("Resolver: addUserActivity...");
+
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const date = new Date().toLocaleDateString().substr(0,10);
+      const request = args.userInput.activityRequest;
+      const activity = {
+        date: date,
+        request: request,
+      };
+
+      const user = await User.findOneAndUpdate({_id:args.userId},{$addToSet: {activity: activity}},{new: true, useFindAndModify: false})
+
+
+      return {
+        ...user._doc,
+        _id: user.id,
+        name: user.name,
+        username: user.username,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+deleteUserActivity: async (args, req) => {
+    console.log("Resolver: deleteUserActivity...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const activityUser = await User.findById({_id: args.activityId});
+      if (activityUser.role !== "Admin") {
+        throw new Error("Yaah.. No! Only Admin can delete a User Activity");
+      };
+        const activity = {
+          date: args.userInput.activityDate,
+          request: args.userInput.activityRequest,
+        };
+        const user = await User.findOneAndUpdate({_id:args.userId},{$pull: { activity: activity }},{new: true, useFindAndModify: false})
+
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+createUser: async (args, req) => {
     console.log("Resolver: createUser...");
     try {
       const existingUserName = await User.findOne({ username: args.userInput.username});
