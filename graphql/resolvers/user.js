@@ -1,19 +1,18 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const DataLoader = require('dataloader');
-// const nodemailer = require('nodemailer');
 const User = require('../../models/user');
+const Product = require('../../models/product');
+const Order = require('../../models/order');
+const Review = require('../../models/review');
 const util = require('util');
+const moment = require('moment');
 
 const { transformUser } = require('./merge');
 const { dateToString } = require('../../helpers/date');
 const { pocketVariables } = require('../../helpers/pocketVars');
 
-// const mailjet = require ('node-mailjet')
-// .connect(pocketVariables.mailjet.a, pocketVariables.mailjet.b)
-
 const sgMail = require('@sendgrid/mail');
-// const S3 = require('aws-sdk/clients/s3');
 const AWS = require('aws-sdk');
 // const stripe = require('stripe')(process.env.STRIPE_B);
 
@@ -30,7 +29,7 @@ module.exports = {
     console.log("Resolver: test email...");
     try {
       let sendStatus = null;
-
+      // console.log(process.env.SENDGRID_A);
       sgMail.setApiKey(process.env.SENDGRID_A);
       const msg = {
         to: 'michael.grandison@gmail.com',
@@ -44,14 +43,14 @@ module.exports = {
         .then(() => {
           // console.log('Email Sent!');
           sendStatus = 'Email Sent!';
-          // console.log('sendStatus',sendStatus);
+          console.log('sendStatus',sendStatus);
         })
         .catch(error => {
           // console.error(error.toString());
           const {message, code, response} = error;
           const {headers, body} = response;
           sendStatus = error.toString()+response;
-          // console.log('sendStatus',sendStatus);
+          console.log('sendStatus',sendStatus);
         });
 
       // return users.map(user => {
@@ -64,16 +63,18 @@ module.exports = {
     }
   },
   getAllUsers: async (args, req) => {
-
     console.log("Resolver: getAllUsers...");
-
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
     }
     try {
-      const users = await User.find({})
-
-
+      const users = await User.find()
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
       return users.map(user => {
         return transformUser(user,);
       });
@@ -87,10 +88,13 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-
       const user = await User.findById(args.userId)
-
-
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
         return {
             ...user._doc,
             _id: user.id,
@@ -106,17 +110,18 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-      let fieldType = null;
       let resolverField = args.field;
       let resolverQuery = args.query;
       const query = {[resolverField]:resolverQuery};
-      // console.log(query);
       const users = await User.find(query)
-
-
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
       return users.map(user => {
         return transformUser(user);
-
       });
     } catch (err) {
       throw err;
@@ -128,19 +133,80 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-      let fieldType = null;
       let resolverField = args.field;
       const regExpQuery = new RegExp(args.query)
       let resolverQuery = {$regex: regExpQuery, $options: 'i'};
       const query = {[resolverField]:resolverQuery};
-      // console.log(query);
       const users = await User.find(query)
-
-
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
       return users.map(user => {
         return transformUser(user);
 
       });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getUsersByInterests: async (args, req) => {
+    console.log("Resolver: getUsersByInterests...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const interests = args.interests;
+      const users = await User.find({'interests': {$all: interests}})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return users.map(user => {
+        return transformUser(user);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getUsersByPointRange: async (args, req) => {
+    console.log("Resolver: getUsersByPointRange...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const users = await User.find({points: {$gte: args.lower, $lte: args.upper}})
+
+      return users.map(user => {
+        return transformUser(user);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getThisUser: async (args, req) => {
+    console.log("Resolver: getThisUser...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const user = await User.findById({_id: args.activityId})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email ,
+        name: user.name,
+      };
     } catch (err) {
       throw err;
     }
@@ -151,45 +217,320 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-
       const pocketVars = process.env.CREDS;
-      // console.log('pocketVars',pocketVars);
-      // const pocketVars = JSON.stringify(pocketVariables);
-      // console.log(pocketVariables,pocketVars);
       return pocketVars;
+    } catch (err) {
+      throw err;
+    }
+  },
+  requestPasswordReset: async (args) => {
+    console.log('Resolver: requestPasswordReset...');
+    try {
+      const username = args.userInput.username;
+      const email = args.userInput.email;
+      const userExists = await User.findOne({username: args.userInput.username, 'contact.email': args.userInput.contactEmail})
+      if (!userExists) {
+        console.log('...user doesnt exist. Check your credentials and try again...');
+        throw new Error('...user doesnt exist. Check your credentials and try again...')
+      }
+
+      let verificationCode = '0';
+      console.log(`
+        args: ${args},
+        moment: ${moment}
+        `);
+        // verification code = today's date user id * random btwn 1-5
+
+      const user = await User.findOneAndUpdate(
+        {_id: userExists._id},
+        {verification: {
+          verified: false,
+          type: 'passwordReset',
+          code: verificationCode
+        }},
+        {new: true, useFindAndModify: false}
+      )
+      const key = 'Request_All_Ankara_New_Everything_Password';
+      const encryptor = require('simple-encryptor')(key);
+      const encrypted = encryptor.encrypt(verificationCode);
+      const resetUrl = 'localhost:3000/passwordReset/'+userExists._id+'@'+encrypted+'';
+      const userEmail = user.contact.email;
+      // console.log('resetUrl',resetUrl);
+
+      let sendStatus = null;
+
+      sgMail.setApiKey(process.env.SENDGRID_A);
+      const msg = {
+        to: userEmail,
+        from: 'african.genetic.survival@gmail.com',
+        subject: 'Password Reset',
+        text: `
+          ... use this url to reset your password...
+          ${resetUrl} ...
+        `,
+        html: `
+        <strong>
+        ... use this url to reset your password...
+        <a target="_blank">
+        ${resetUrl}
+        </a> ...
+        </strong>`,
+      };
+      sgMail
+        .send(msg)
+        .then(() => {
+          sendStatus = 'Email Sent!';
+          console.log('sendStatus',sendStatus);
+        })
+        .catch(error => {
+          const {message, code, response} = error;
+          const {headers, body} = response;
+          sendStatus = error.toString()+response;
+          console.log('sendStatus',sendStatus);
+        });
+
+      return {
+          ...user._doc,
+          _id: user.id,
+          name: user.name
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  resetUserPassword: async (args) => {
+    console.log('Resolver: resetUserPassword...');
+    try {
+
+      let verificationChallengeCode = 0;
+      const key = 'All_Ankara_Everything_Reset';
+      const encryptor = require('simple-encryptor')(key);
+      verificationChallengeCode = encryptor.decrypt(args.verification);
+      console.log('verificationChallengeCode',verificationChallengeCode);
+      const preUser = await User.findById({_id: args.userId});
+      const verificationResponse = preUser.verification;
+      if (verificationResponse.type !== 'passwordReset') {
+        console.log('...umm no... reset request doesnt match our records... are you hacking??');
+        throw new Error('...umm no... reset request doesnt match our records... are you hacking??')
+      }
+      if (verificationResponse.code !== verificationChallengeCode) {
+        console.log('...there was an error with password reset verification... contact tech support or request a new reset email...');
+        throw new Error('...there was an error with password reset verification... contact tech support or request a new reset email...')
+      }
+      else {
+        console.log('...password reset verification success... resetting password...');
+      }
+      const password = args.userInput.password;
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = await User.findOneAndUpdate(
+        {_id: args.userId},
+        { $set:
+          {password: hashedPassword,
+            verification: {
+              verified: true,
+              type: null,
+              code: null
+          }}
+        },
+        {new: true, useFindAndModify: false}
+      )
+      return {
+          ...user._doc,
+          _id: user.id,
+          name: user.name
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  verifyUser: async (args, req) => {
+    console.log("Resolver: verifyUser...");
+    // if (!req.isAuth) {
+    //   throw new Error('Unauthenticated!');
+    // }
+    try {
+      const challenge = {
+        type: args.userInput.verificationType,
+        code: args.userInput.verificationCode,
+      }
+      const preUser = await User.findOne({'contact.email': args.userInput.contactEmail});
+      const response = {
+        type: preUser.verification.type,
+        code: preUser.verification.code,
+      };
+      console.log('challenge', challenge, 'response',response, 'match',challenge.type === response.type && challenge.code === response.code);
+      if (challenge.type !== response.type && challenge.code !== response.code) {
+        throw new Error('challenge and response do not match. Check the type and code sent in the verification email and try again');
+      }
+      if (challenge.type === response.type && challenge.code === response.code) {
+        console.log("success");;
+      }
+      const user = await User.findOneAndUpdate({_id: preUser._id},{
+        verification: {
+          verified: true,
+          type: response.type,
+          code: null
+        }
+      },{new: true, useFindAndModify: false});
+      return {
+        ...user._doc,
+        _id: user.id,
+        name: user.name,
+        username: user.username
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  userOnline: async (args, req) => {
+    console.log("Resolver: userOnline...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const user = await User.findOneAndUpdate({_id:args.userId},{clientConnected: true},{new: true, useFindAndModify: false})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email ,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  userOffline: async (args, req) => {
+    console.log("Resolver: userOffline...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const user = await User.findOneAndUpdate({_id:args.userId},{clientConnected: false},{new: true, useFindAndModify: false})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email ,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateUserAllFields: async (args, req) => {
+    console.log("Resolver: updateUserAllFields...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {
+          name: args.userInput.name,
+          role: args.userInput.role,
+          type: args.userInput.type,
+          username: args.userInput.username,
+          dob: args.userInput.dob,
+          age: args.userInput.age,
+          contact: {
+            email: args.userInput.contactEmail,
+            phone: args.userInput.contactPhone,
+          },
+          bio: args.userInput.bio
+        },
+        {new: true, useFindAndModify: false})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        email: user.contact.email ,
+        name: user.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateUserSingleField: async (args, req) => {
+    console.log("ResolverupdateUserSingleField...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const resolverField = args.field;
+      const resolverQuery = args.query;
+      const query = {[resolverField]:resolverQuery};
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        query,
+        {new: true, useFindAndModify: false})
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      return {
+        ...user._doc,
+        _id: user.id,
+        name: user.name,
+        username: user.username,
+      };
     } catch (err) {
       throw err;
     }
   },
   createUser: async (args, req) => {
     console.log("Resolver: createUser...");
-
     try {
-
       const existingUserName = await User.findOne({ username: args.userInput.username});
       if (existingUserName) {
         throw new Error('User w/ that username exists already.');
       }
       const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
-      const today = new Date();
+      const today = moment();
       let age = 0;
-      let dob = new Date(args.userInput.dob);
-      let ageDifMs = Date.now() - dob.getTime();
+      let dob = moment(args.userInput.dob).format('YYYY-MM-DD');
+      let dob2 = new Date(args.userInput.dob);
+      let ageDifMs = new Date() - dob2.getTime();
       let ageDate = new Date(ageDifMs);
       age =  Math.abs(ageDate.getUTCFullYear() - 1970);
-      let verfCode = null;
+      // console.log('dob',dob,'age',age);
+      let rando = Math.floor(Math.random() * 5) + 1;
+      let verfCode = moment().format()+'?'+args.userInput.username+'?'+rando+'';
+      const key = 'All_Ankara_Everything_Signup';
+      const encryptor = require('simple-encryptor')(key);
+      const encrypted = encryptor.encrypt(verfCode);
+      // console.log('rando',rando,'verfCode',verfCode,'encrypted',encrypted);
+      verfCode = encrypted;
+
       const user = new User({
         password: hashedPassword,
         name: args.userInput.name,
         role: args.userInput.role,
+        type: args.userInput.type,
         username: args.userInput.username,
         dob: args.userInput.dob,
         age: age,
-        public: args.userInput.public,
         contact: {
           email: args.userInput.contactEmail,
-          phone: args.userInput.contactPhone,
-          phone2: args.userInput.contactPhone2
+          phone: args.userInput.contactPhone
         },
         addresses: [{
           type: args.userInput.addressType,
@@ -202,33 +543,23 @@ module.exports = {
           primary: true
         }],
         bio: args.userInput.bio,
-        profileImages: [],
-        socialMedia: [],
         interests: [],
-        perks: [],
-        promos: [],
-        friends: [],
         points: 0,
-        tags: [],
         clientConnected: false,
         loggedIn:false,
         verification: {
           verified: false,
           type: "email",
-          code: 'VERF001'
+          code: verfCode
         },
         activity: [{
           date: today,
           request: "initial activity... profile created..."
         }],
-        likedLessons: [],
-        bookedLessons: [],
-        attendedLessons: [],
-        taughtLessons: [],
+        liked: [],
         wishlist: [],
         cart: [],
-        comments: [],
-        messages: [],
+        reviews: [],
         orders: [],
         paymentInfo: []
       });
@@ -258,40 +589,20 @@ module.exports = {
         .then(() => {
           // console.log('Email Sent!');
           sendStatus = 'Email Sent!';
-          // console.log('sendStatus',sendStatus);
+          console.log('sendStatus',sendStatus);
         })
         .catch(error => {
           // console.error(error.toString());
           const {message, code, response} = error;
           const {headers, body} = response;
           sendStatus = error.toString()+response;
-          // console.log('sendStatus',sendStatus);
+          console.log('sendStatus',sendStatus);
         });
         console.log('verification: ',sendStatus);
 
       return {
         ...result._doc,
-        password: hashedPassword,
-        _id: result.id,
-        name: result.name,
-        role: result.role,
-        username: result.username,
-        dob: result.dob,
-        content: {
-          email: result.contact.email,
-          phone: result.contact.phone,
-          phone2: result.contact.phone2
-        },
-        addresses: [{
-          type: result.addresses[0].type,
-          number: result.addresses[0].number,
-          street: result.addresses[0].street,
-          town: result.addresses[0].town,
-          city: result.addresses[0].city,
-          country: result.addresses[0].country,
-          postalCode: result.addresses[0].postalCode
-        }],
-        bio: result.bio
+        _id: result.id
       };
     } catch (err) {
       throw err;

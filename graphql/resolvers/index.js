@@ -7,9 +7,9 @@ const reviewResolver = require('./review');
 const rootResolver = {
   ...authResolver,
   ...userResolver,
-  ...productResolver,
-  ...orderResolver,
-  ...reviewResolver,
+  // ...productResolver,
+  // ...orderResolver,
+  // ...reviewResolver,
 };
 
 module.exports = rootResolver;

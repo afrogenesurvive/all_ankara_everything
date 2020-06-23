@@ -1,17 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const DataLoader = require('dataloader');
-
 const User = require('../../models/user');
-const Lesson = require('../../models/lesson');
+const Product = require('../../models/product');
 const Order = require('../../models/order');
 const Review = require('../../models/review');
-const Perk = require('../../models/perk');
-const Promo = require('../../models/promo');
-const Comment = require('../../models/comment');
-const Message = require('../../models/message');
-const Notification = require('../../models/notification');
 const util = require('util');
+const moment = require('moment'); 
 
 const { transformReview } = require('./merge');
 const { dateToString } = require('../../helpers/date');
@@ -80,31 +75,7 @@ module.exports = {
       throw err;
     }
   },
-  updateReviewBasic: async (args, req) => {
-    console.log("Resolver: updateReviewBasic...");
-    if (!req.isAuth) {
-      throw new Error('Unauthenticated!');
-    }
-    try {
-      const review = await Review.findOneAndUpdate({_id:args.reviewId},{
-        type: args.reviewInput.type,
-        title: args.reviewInput.title,
-        body: args.reviewInput.body,
-        rating: args.reviewInput.rating
-        },{new: true, useFindAndModify: false})
-        .populate('author')
-        .populate('lesson');
-
-        return {
-            ...review._doc,
-            _id: review.id,
-            title: review.title
-        };
-    } catch (err) {
-      throw err;
-    }
-  },
-  updateReviewByField: async (args, req) => {
+  updateReviewSingleField: async (args, req) => {
     console.log("Resolver: updateReviewField...");
 
     if (!req.isAuth) {

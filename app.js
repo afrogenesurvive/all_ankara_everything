@@ -33,11 +33,11 @@ app.use((req, res, next) => {
   next();
 });
 
-if (process.env.APP_SECRET) {
-  console.log('...env vars present...');
-} else {
-  console.log('...env vars absent...');
-}
+// if (process.env.APP_SECRET) {
+//   console.log('...env vars present...');
+// } else {
+//   console.log('...env vars absent...');
+// }
 
 // cron.schedule('*/5 * * * * *', () => {
 //   let cronExp = 'every 5 seconds..';

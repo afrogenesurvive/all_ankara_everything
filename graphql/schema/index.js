@@ -5,6 +5,7 @@ const { buildSchema } = require('graphql');
 module.exports = buildSchema(`
 
   type User {
+    _id: ID
     password: String
     name: String
     role: String
@@ -14,6 +15,7 @@ module.exports = buildSchema(`
     age: Int
     addresses: [UserAddress]
     contact: UserContact
+    bio: String
     interests: [String]
     points: Float
     loggedIn: Boolean
@@ -88,9 +90,11 @@ module.exports = buildSchema(`
     addressCountry: String
     addressPostalCode: String
     addressPrimary: String
-    conatctPhone: String
+    contactPhone: String
     contactEmail: String
-    interests: [String]
+    bio: String
+    interest: String
+    interests: String
     points: Float
     paymentInfoDate: String
     paymentInfoType: String
@@ -102,6 +106,7 @@ module.exports = buildSchema(`
 
 
   type Order {
+    _id: ID
     date: String
     time: String
     type: String
@@ -112,7 +117,7 @@ module.exports = buildSchema(`
     shipping: OrderShipping
     total: Float
     description: String
-    notes: String
+    notes: [String]
     payment: String
     billingAddress: [OrderAddress]
     shippingAddress: [OrderAddress]
@@ -147,23 +152,24 @@ module.exports = buildSchema(`
     subType: String
     taxAmount: Float
     taxDescription: String
-    shippingAmount: Flaot
+    shippingAmount: Float
     total: Float
     description: String
+    note: String
     notes: String
     payment: String
     billingAddressNumber: Int
-    billingAddressStreet:
-    billingAddressTown:
-    billingAddressCity:
-    billingAddressCountry:
-    billingAddressPostalCode:
+    billingAddressStreet: String
+    billingAddressTown: String
+    billingAddressCity: String
+    billingAddressCountry: String
+    billingAddressPostalCode: String
     shippingAddressNumber: Int
-    shippingAddressStreet:
-    shippingAddressTown:
-    shippingAddressCity:
-    shippingAddressCountry:
-    shippingAddressPostalCode:
+    shippingAddressStreet: String
+    shippingAddressTown: String
+    shippingAddressCity: String
+    shippingAddressCountry: String
+    shippingAddressPostalCode: String
     statusType: String
     statusValue: Boolean
     statusDate: String
@@ -182,6 +188,7 @@ module.exports = buildSchema(`
   }
 
   type Product {
+    _id: ID
     public: Boolean
     name: String
     subtitle: String
@@ -226,6 +233,7 @@ module.exports = buildSchema(`
     price: Float
     quantity: Int
     inStock: Boolean
+    tag: String
     tags: String
     unit: String
     delivery: String
@@ -276,7 +284,7 @@ module.exports = buildSchema(`
     getUsersByField(activityId: ID!, field: String!, query: String!): [User]
     getUsersByFieldRegex(activityId: ID!, field: String!, query: String!): [User]
     getUsersByInterests(activityId: ID!, userInput: UserInput!): [User]
-    getUsersByPointRange(activityId: ID!, upperLimit: Float!,lowerLimit: Float!): [User]
+    getUsersByPointRange(activityId: ID!, upper: Float!,lower: Float!): [User]
     getThisUser(activityId: ID!): User
     getUsersByLikedProducts(activityId: ID!, productIds: String!): [User]
     getUsersByWishListItems(activityId: ID!, productIds: String!): [User]
@@ -289,7 +297,7 @@ module.exports = buildSchema(`
     getProductsByField(activityId: ID!, field: String!, query: String!, public: Boolean!): [Product]
     getProductsByFieldRegex(activityId: ID!, field: String!, query: String!, public: Boolean!): [Product]
     getProductsByTags(activityId: ID!, productInput: ProductInput!, public: Boolean!): [Product]
-    getProductsByPointRange(activityId: ID!, upperLimit: Float!,lowerLimit: Float!, public: Boolean!): [Product]
+    getProductsByPointRange(activityId: ID!, upper: Float!,lower: Float!, public: Boolean!): [Product]
     getProductsByLikers(activityId: ID!, userIds: String!, public: Boolean!): [Product]
     getProductsByBuyers(activityId: ID!, userIds: String!, public: Boolean!): [Product]
     getProductsByWishlisters(activityId: ID!, userIds: String!, public: Boolean!): [Product]
@@ -301,7 +309,7 @@ module.exports = buildSchema(`
     getOrdersByField(activityId: ID!, field: String!, query: String!): [Order]
     getOrdersByFieldRegex(activityId: ID!, field: String!, query: String!): [Order]
     getOrdersByAddress(activityId: ID!, orderInput: OrderInput!): [Order]
-    getOrdersByStatuses(activityId: ID!, orderInput: OrderInput!): [Orders]
+    getOrdersByStatuses(activityId: ID!, orderInput: OrderInput!): [Order]
 
     getAllReviews(activityId: ID!): [Review]
     getReviewById(activityId: ID!, reviewId: ID!): Review
@@ -315,9 +323,10 @@ module.exports = buildSchema(`
 
   type RootMutation {
 
-    createUser(userInput: UserInput!): User
     requestPasswordReset(userInput: UserInput! ): User
     resetUserPassword(userId: ID!, verification: String!, userInput: UserInput!):User
+
+    createUser(userInput: UserInput!): User
     updateUserAllFields(activityId: ID!, userId: ID!, userInput: UserInput!): User
     updateUserSingleField(activityId: ID!, userId: ID!, field: String!, query: String!): User
     addUserAddress(activityId: ID!, userId: ID!, userInput: UserInput!): User
@@ -384,9 +393,9 @@ module.exports = buildSchema(`
 
 
     createReview(activityId: ID!, reviewInput: ReviewInput!): Review
-    updateOrderSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
+    updateReviewSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
 
-    deleteReviewById(activityId: ID!, reviewId: ID!): review
+    deleteReviewById(activityId: ID!, reviewId: ID!): Review
 
   }
 

@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
   password: {type: String,required: true},
   name: {type: String,required: true},
-  role: {type: String},
+  role: {type: String, enum: ['Admin', 'User', 'Guest']},
   type: {type: String},
   username: {type: String,required: true},
   dob:{type: Date},
@@ -25,6 +25,7 @@ const userSchema = new Schema({
     phone: {type: String},
     email: {type: String,required: true}
   },
+  bio: {type: String},
   interests: [{type: String}],
   points: {type: Number},
   loggedIn: {type: Boolean},
