@@ -677,7 +677,7 @@ module.exports = {
       throw err;
     }
   },
-addUserPaymentInfo: async (args, req) => {
+  addUserPaymentInfo: async (args, req) => {
     console.log("Resolver: addUserPaymentInfo...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -691,10 +691,9 @@ addUserPaymentInfo: async (args, req) => {
         valid: args.userInput.paymentInfoValid,
         primary: false,
       };
-      console.log('paymentInfo',paymentInfo);
       const user = await User.findOneAndUpdate(
         {_id:args.userId},
-        {$addToSet: {paymentInfo: paymentInfo}},
+        {$addToSet:{paymentInfo: paymentInfo}},
         {new: true, useFindAndModify: false}
       )
       .populate('wishlist')
@@ -714,7 +713,7 @@ addUserPaymentInfo: async (args, req) => {
       throw err;
     }
   },
-deleteUserPaymentInfo: async (args, req) => {
+  deleteUserPaymentInfo: async (args, req) => {
     console.log("Resolver: deleteUserPaymentInfo...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -734,6 +733,7 @@ deleteUserPaymentInfo: async (args, req) => {
         };
         const user = await User.findOneAndUpdate(
           {_id:args.userId},
+          // {'paymentInfo': [] },
           {$pull: { 'paymentInfo': paymentInfo }},
           {new: true, useFindAndModify: false}
         )
@@ -754,7 +754,7 @@ deleteUserPaymentInfo: async (args, req) => {
       throw err;
     }
   },
-setUserPaymentInfoPrimary: async (args, req) => {
+  setUserPaymentInfoPrimary: async (args, req) => {
     console.log("Resolver: setUserPaymentInfoPrimary...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -766,20 +766,15 @@ setUserPaymentInfoPrimary: async (args, req) => {
         {new: true, useFindAndModify: false}
       )
       const paymentInfo = {
-        date: args.userInput.date,
+        date: args.userInput.paymentInfoDate,
         type: args.userInput.paymentInfoType,
         description: args.userInput.paymentInfoDescription,
         body: args.userInput.paymentInfoBody,
         valid: args.userInput.paymentInfoValid,
-        primary: true
+        primary: args.userInput.paymentInfoPrimary
       };
       const user = await User.findOneAndUpdate(
-        {_id:args.userId,
-          paymentInfo: paymentInfo
-        // 'paymentInfo.type': paymentInfo.type,
-        // 'paymentInfo.description': paymentInfo.description,
-        // 'paymentInfo.body': paymentInfo.body,
-        },
+        {_id:args.userId, paymentInfo: paymentInfo},
         {'paymentInfo.$.primary': true},
         {new: true, useFindAndModify: false}
       )
@@ -800,7 +795,7 @@ setUserPaymentInfoPrimary: async (args, req) => {
       throw err;
     }
   },
-addUserInterests: async (args, req) => {
+  addUserInterests: async (args, req) => {
     console.log("Resolver: addUserInterests...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -830,7 +825,7 @@ addUserInterests: async (args, req) => {
       throw err;
     }
   },
-deleteUserInterest: async (args, req) => {
+  deleteUserInterest: async (args, req) => {
     console.log("Resolver: deleteUserInterest...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -858,23 +853,30 @@ deleteUserInterest: async (args, req) => {
       throw err;
     }
   },
-addUserActivity: async (args, req) => {
+  addUserActivity: async (args, req) => {
     console.log("Resolver: addUserActivity...");
 
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
     }
     try {
-      const date = new Date().toLocaleDateString().substr(0,10);
+      const date = moment().format('YYYY-MM-DD');
       const request = args.userInput.activityRequest;
       const activity = {
         date: date,
         request: request,
       };
-
-      const user = await User.findOneAndUpdate({_id:args.userId},{$addToSet: {activity: activity}},{new: true, useFindAndModify: false})
-
-
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$addToSet: {activity: activity}},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
       return {
         ...user._doc,
         _id: user.id,
@@ -885,7 +887,7 @@ addUserActivity: async (args, req) => {
       throw err;
     }
   },
-deleteUserActivity: async (args, req) => {
+  deleteUserActivity: async (args, req) => {
     console.log("Resolver: deleteUserActivity...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
@@ -912,7 +914,7 @@ deleteUserActivity: async (args, req) => {
       throw err;
     }
   },
-createUser: async (args, req) => {
+  createUser: async (args, req) => {
     console.log("Resolver: createUser...");
     try {
       const existingUserName = await User.findOne({ username: args.userInput.username});

@@ -26,7 +26,7 @@ module.exports = buildSchema(`
     cart: [Product]
     reviews: [Review]
     orders: [Order]
-    paymentInfo: UserPaymentInfo
+    paymentInfo: [UserPaymentInfo]
     affiliate: UserAffiliate
     activity: UserActivity
   }
@@ -101,7 +101,7 @@ module.exports = buildSchema(`
     paymentInfoDescription: String
     paymentInfoBody: String
     paymentInfoValid: Boolean
-    paymentInforimary: Boolean
+    paymentInfoPrimary: Boolean
   }
 
 
@@ -352,6 +352,7 @@ module.exports = buildSchema(`
 
     deleteUserById(activityId: ID!, userId: ID!): User
     deleteUserInterest(activityId: ID!, userId: ID!, userInput: UserInput!): User
+    deleteUserPaymentInfo(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserAddress(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserActivity(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserReview(activityId: ID!, userId: ID!, reviewId: ID!): User
