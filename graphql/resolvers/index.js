@@ -7,7 +7,7 @@ const reviewResolver = require('./review');
 const rootResolver = {
   ...authResolver,
   ...userResolver,
-  // ...productResolver,
+  ...productResolver,
   // ...orderResolver,
   // ...reviewResolver,
 };

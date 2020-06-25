@@ -26,13 +26,16 @@ const productSchema = new Schema({
   images: [{
     name: {type: String},
     type: {type: String},
-    link: {type: String}
+    link: {type: String},
+    _id: false
   }],
   files: [{
     name: {type: String},
     type: {type: String},
-    link: {type: String}
+    link: {type: String},
+    _id: false
   }],
+  listedBy: {type: Schema.Types.ObjectId,ref: 'User'},
   likers: [{type: Schema.Types.ObjectId,ref: 'User'}],
   buyers: [{type: Schema.Types.ObjectId,ref: 'User'}],
   wishlisters: [{type: Schema.Types.ObjectId,ref: 'User'}],

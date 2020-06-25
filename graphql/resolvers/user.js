@@ -158,7 +158,7 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-      const interests = args.interests;
+      const interests = args.userInput.interests.split(',');
       const users = await User.find({'interests': {$all: interests}})
       .populate('wishlist')
       .populate('liked')
@@ -180,7 +180,6 @@ module.exports = {
     }
     try {
       const users = await User.find({points: {$gte: args.lower, $lte: args.upper}})
-
       return users.map(user => {
         return transformUser(user);
       });
@@ -666,6 +665,66 @@ module.exports = {
       .populate('reviews')
       .populate('orders')
       .populate('affiliate.referrer');
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addUserLikedProduct: async (args, req) => {
+    console.log("Resolver: addUserLikedProduct...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findById({_id: args.productId});
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$addToSet: { liked: product }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+
+        return {
+          ...user._doc,
+          _id: user.id,
+          email: user.contact.email ,
+          name: user.name,
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteUserLikedProduct: async (args, req) => {
+    console.log("Resolver: deleteUserLikedProduct...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findById({_id: args.productId});
+
+      const user = await User.findOneAndUpdate(
+        {_id:args.userId},
+        {$pull: { liked: product }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('wishlist')
+      .populate('liked')
+      .populate('cart')
+      .populate('reviews')
+      .populate('orders')
+      .populate('affiliate.referrer');
+      console.log('user',user);
 
         return {
           ...user._doc,

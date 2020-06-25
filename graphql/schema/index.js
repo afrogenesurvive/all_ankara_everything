@@ -202,15 +202,16 @@ module.exports = buildSchema(`
     variant: [String]
     size: String
     dimensions: String
-    price: String
-    points: String
-    quantity: String
+    price: Float
+    points: Float
+    quantity: Int
     inStock: Boolean
     tags: [String]
     unit: String
     delivery: String
     images: [Image]
     files: [File]
+    listedBy: User
     likers: [User]
     buyers: [User]
     wishlisters: [User]
@@ -231,6 +232,7 @@ module.exports = buildSchema(`
     size: String
     dimensions: String
     price: Float
+    points: Float
     quantity: Int
     inStock: Boolean
     tag: String
@@ -292,12 +294,12 @@ module.exports = buildSchema(`
     getUserByReview(activityId: ID!, reviewId: ID!): User
     getUserByOrder(activityId: ID!, orderId: ID!): User
 
-    getAllProducts(acticityId: ID!): [Product]
-    getProductById(activityId: ID!, productId: ID!, public: Boolean!): Product
-    getProductsByField(activityId: ID!, field: String!, query: String!, public: Boolean!): [Product]
-    getProductsByFieldRegex(activityId: ID!, field: String!, query: String!, public: Boolean!): [Product]
-    getProductsByTags(activityId: ID!, productInput: ProductInput!, public: Boolean!): [Product]
-    getProductsByPointRange(activityId: ID!, upper: Float!,lower: Float!, public: Boolean!): [Product]
+    getAllProducts(activityId: ID!): [Product]
+    getProductById(activityId: ID!, productId: ID!): Product
+    getProductsByField(activityId: ID!, field: String!, query: String!): [Product]
+    getProductsByFieldRegex(activityId: ID!, field: String!, query: String!): [Product]
+    getProductsByTags(activityId: ID!, productInput: ProductInput!): [Product]
+    getProductsByPointRange(activityId: ID!, upper: Float!,lower: Float!): [Product]
     getProductsByLikers(activityId: ID!, userIds: String!, public: Boolean!): [Product]
     getProductsByBuyers(activityId: ID!, userIds: String!, public: Boolean!): [Product]
     getProductsByWishlisters(activityId: ID!, userIds: String!, public: Boolean!): [Product]
@@ -334,10 +336,10 @@ module.exports = buildSchema(`
     addUserPaymentInfo(activityId: ID!, userId: ID!, userInput: UserInput): User
     setUserPaymentInfoPrimary(activityId: ID!, userId: ID!, userInput: UserInput!): User
     addUserInterests(activityId: ID!, userId: ID!, userInput: UserInput!): User
-    updateUserPoints(activityId: ID!, userId: ID!, userInput: UserInput!): User
-    addUserLikedProduct(activityId: ID!, productId: ID!): User
-    addUserWishlistItem(activityId: ID!, productId: ID!): User
-    addUserCartProduct(activityId: ID!, productId: ID!): User
+    addUserPoints(activityId: ID!, userId: ID!, userInput: UserInput!): User
+    addUserLikedProduct(activityId: ID!, userId: ID!, productId: ID!): User
+    addUserWishlistItem(activityId: ID!, userId: ID!, productId: ID!): User
+    addUserCartProduct(activityId: ID!, userId: ID!, productId: ID!): User
     addUserOrder(activityId: ID!, userId: ID!, orderId: ID!): User
     addUserReview(activityId: ID!, userId: ID!, reviewId: ID!): User
     addUserActivity(activityId: ID!, userId: ID!, activity: String!): User
@@ -354,6 +356,7 @@ module.exports = buildSchema(`
     deleteUserInterest(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserPaymentInfo(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserAddress(activityId: ID!, userId: ID!, userInput: UserInput!): User
+    deleteUserLikedProduct(activityId: ID!, userId: ID!, productId: ID!): User
     deleteUserActivity(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserReview(activityId: ID!, userId: ID!, reviewId: ID!): User
     deleteUserOrder(activityId: ID!, userId: ID!, orderId: ID!): User
@@ -390,7 +393,7 @@ module.exports = buildSchema(`
     updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
 
     deleteOrderById(activityId: ID!, orderId: ID!): Order
-    deleteOrderStatus(acticityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    deleteOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
 
 
     createReview(activityId: ID!, reviewInput: ReviewInput!): Review
