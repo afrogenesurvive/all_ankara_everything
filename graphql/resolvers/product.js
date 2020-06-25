@@ -419,6 +419,273 @@ module.exports = {
       throw err;
     }
   },
+  addProductLiker: async (args, req) => {
+    console.log("Resolver: addProductLiker...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const liker = await User.findById({_id: args.userId});
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$addToSet: { likers: liker }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteProductLiker: async (args, req) => {
+    console.log("Resolver: deleteProductLiker...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$pull: { likers: args.userId }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addProductBuyer: async (args, req) => {
+    console.log("Resolver: addProductBuyer...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const buyer = await User.findById({_id: args.userId});
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$addToSet: { buyers: buyer }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteProductBuyer: async (args, req) => {
+    console.log("Resolver: deleteProductBuyer...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$pull: { buyers: args.userId }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addProductWishlister: async (args, req) => {
+    console.log("Resolver: addProductWishlister...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const wishlister = await User.findById({_id: args.userId});
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$addToSet: { wishlisters: wishlister }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteProductWishlister: async (args, req) => {
+    console.log("Resolver: deleteProductWishlister...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$pull: { wishlisters: args.userId }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  addProductOrder: async (args, req) => {
+    console.log("Resolver: addProductOrder...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const order = await Order.findById({_id: args.orderId});
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$addToSet: { orders: order }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteProductOrder: async (args, req) => {
+    console.log("Resolver: deleteProductOrder...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$pull: { orders: args.orderId }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addProductReview: async (args, req) => {
+    console.log("Resolver: addProductReview...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const review = await Review.findById({_id: args.reviewId});
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$addToSet: { reviews: review }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteProductReview: async (args, req) => {
+    console.log("Resolver: deleteProductReview...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const product = await Product.findOneAndUpdate(
+        {_id:args.productId},
+        {$pull: { reviews: args.reviewId }},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('listedBy')
+      .populate('likers')
+      .populate('buyers')
+      .populate('wishlisters')
+      .populate('orders')
+      .populate('reviews');
+      return {
+        ...product._doc,
+        _id: product.id,
+        name: product.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
+
   createProduct: async (args,req) => {
     console.log("Resolver: createProduct...");
     if (!req.isAuth) {

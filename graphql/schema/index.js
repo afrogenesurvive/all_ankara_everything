@@ -117,10 +117,10 @@ module.exports = buildSchema(`
     shipping: OrderShipping
     total: Float
     description: String
-    notes: [String]
+    notes: String
     payment: String
-    billingAddress: [OrderAddress]
-    shippingAddress: [OrderAddress]
+    billingAddress: OrderAddress
+    shippingAddress: OrderAddress
     status: [OrderStatus]
     feedback: String
   }
@@ -153,6 +153,7 @@ module.exports = buildSchema(`
     taxAmount: Float
     taxDescription: String
     shippingAmount: Float
+    shippingDescription: String
     total: Float
     description: String
     note: String
@@ -357,6 +358,8 @@ module.exports = buildSchema(`
     deleteUserPaymentInfo(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserAddress(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserLikedProduct(activityId: ID!, userId: ID!, productId: ID!): User
+    deleteUserWishlistItem(activityId: ID!, userId: ID!, productId: ID!): User
+    deleteUserCartProduct(activityId: ID!, userId: ID!, productId: ID!): User
     deleteUserActivity(activityId: ID!, userId: ID!, userInput: UserInput!): User
     deleteUserReview(activityId: ID!, userId: ID!, reviewId: ID!): User
     deleteUserOrder(activityId: ID!, userId: ID!, orderId: ID!): User
@@ -385,7 +388,7 @@ module.exports = buildSchema(`
     deleteProductOrder(activityId: ID!, productId: ID!, orderId: ID!): Product
 
 
-    createOrder(activityId: ID!, orderInput: OrderInput!): Order
+    createOrder(activityId: ID!, buyerId:ID!, orderInput: OrderInput!): Order
     updateOrderSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
     updateOrderShipping(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
     updateOrderAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!, addressType: String!): Order

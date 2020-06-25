@@ -26,9 +26,6 @@ module.exports = {
     }
     try {
       const orders = await Order.find({})
-      .populate('buyer')
-      .populate('receiver')
-      .populate('lessons.ref');
 
       return orders.map(order => {
         return transformOrder(order,);
@@ -87,6 +84,7 @@ module.exports = {
     try {
       const order = await Order.findByIdAndRemove(args.orderId);
 
+      // remove from user and products
         return {
             ...order._doc,
             _id: order.id,
@@ -100,79 +98,50 @@ module.exports = {
   createOrder: async (args, req) => {
     console.log("Resolver: createOrder...");
     try {
-
-      const buyer = await User.findById({_id: args.buyerId}).populate('cart.lesson.ref');
-      const receiver = await User.findById({_id: args.receiverId});
-      const date = new Date().toLocaleDateString().substr(0,10);
-      const time = new Date().toLocaleDateString().substr(11,5);
+      const buyer = await User.findById({_id: args.buyerId})
+      .populate('cart');
+      const datetime = moment().local().format("YYYY-MM-DD,hh:mm:ss a");
+      const datetime2 = moment().local().format("YYYY-MM-DD,hh:mm:ss a").split(',');
+      console.log('1',datetime);
+      console.log('2',datetime2);
+      const date = datetime2[0];
+      const time = datetime2[1];
       const preCart = buyer.cart;
       if (preCart.length === 0) {
         throw new Error('Ummm just no! Your cart is empty...')
       }
-      let orderLessonsX = [];
+      // let orderProductsX = [];
+      let orderTotal = 0;
       for (let index = 0; index < preCart.length; index++) {
         let preCartItem = preCart[index];
-        let lessonBeta = await Lesson.findById({_id: preCartItem.lesson});
-        let preCartItem2 = {
-          sku: lessonBeta.sku,
-          price: lessonBeta.price,
-          date: preCartItem.sessionDate,
-          title: preCartItem.sessionTitle,
-          ref: lessonBeta
-        }
-        orderLessonsX.push(preCartItem2);
+        let price = preCartItem.price;
+        orderTotal = orderTotal + price;
         // console.log(`
-        //     formatting order lessons stage 1:
         //     index: ${index},
-        //     preCartItem2: ${preCartItem2},
-        //     orderLessonsX.lenght: ${orderLessonsX.length},
-        //     orderLessonsX: ${orderLessonsX}
+        //     price: ${price},
+        //     total: ${orderTotal}
         //   `);
       }
-
-
-      // const preOrderLessons = preCart.map(lesson => lesson.lesson);
-      // const orderLessons = await Lesson.find({_id: {$in: preOrderLessons }});
-
-
-      // const orderLessons2 = orderLessons.map(lesson => ({
-      //   sku: lesson.sku,
-      //   price: lesson.price,
-      //   date: lesson.sessionDate,
-      //   title: lesson.sessionTitle,
-      //   ref: lesson,
-      //   sessionQty: 0
-      // }));
-      // const orderLessons3 = orderLessons.map(x => x.price);
-      // const orderLessons4 = orderLessons3.reduce((a, b) => a + b, 0);
-      // console.log(orderLessons2,orderLessons4);
-      // console.log('preCart',preCart);
-      // console.log('preOrderLessons',preOrderLessons);
-      // console.log('orderLessons2',orderLessons2);
-      // console.log('orderLessons3',orderLessons3);
-      // console.log('orderLessons4',orderLessons4);
-
 
       const order = new Order({
         date: date,
         time: time,
         type: args.orderInput.type,
+        subType: args.orderInput.subType,
         buyer: buyer,
-        receiver: receiver,
-        lessons: orderLessonsX,
-        totals:{
-          a: args.orderInput.totalA,
-          b: args.orderInput.totalB,
-          c: args.orderInput.totalC,
-        },
+        products: preCart,
         tax:{
           description: args.orderInput.taxDescription,
           amount: args.orderInput.taxAmount,
         },
+        shipping: {
+          description: args.orderInput.shippingDescription,
+          amount: args.orderInput.shippingAmount
+        },
+        total: orderTotal,
         description: args.orderInput.description,
         notes: args.orderInput.notes,
         payment: args.orderInput.payment,
-        shipping: args.orderInput.shipping,
         billingAddress:{
           number: args.orderInput.billingAddressNumber,
           street: args.orderInput.billingAddressStreet,
@@ -189,65 +158,58 @@ module.exports = {
           country: args.orderInput.shippingAddressCountry,
           postalCode: args.orderInput.shippingAddressPostalCode,
         },
-        status: {
-          cancelled: {
-            value: false,
-            date: 0,
-          },
-          held: {
-            value: false,
-            date: 0,
-          },
-          paid: {
+        status: [
+          {
+            type: 'checkedOut',
             value: true,
-            date: date,
+            date: date
           },
-          checkedOut: {
+          {
+            type: 'paid',
             value: true,
-            date: date,
-          },
-          emailSent: {
-            value: false,
-            date: 0,
-          },
-          confirmed: {
-            value: false,
-            date: 0,
-          },
-          packaged: {
-            value: false,
-            date: 0,
-          },
-          shipped: {
-            value: false,
-            date: 0,
-          },
-          delivered: {
-            value: false,
-            date: 0,
-          },
-          confirmedDelivery: {
-            value: false,
-            date: 0,
+            date: date
           }
-        }
+        ],
+        feedback: ''
       });
 
-      // console.log('order',order);
-
       const result = await order.save();
-      // console.log('result',result);
-
-      user = await User.findOneAndUpdate(
+      const updateUser = await User.findOneAndUpdate(
         {_id: buyer._id},
         {
           $addToSet: {orders: order},
+          // cart: []
         },
-        {new: true, useFindAndModify: false})
+        {new: true, useFindAndModify: false}
+      )
 
+      console.log('updateUser',updateUser.orders);
+      let updatedProducts = [];
+      for (let index = 0; index < preCart.length; index++) {
+        let preCartItem = preCart[index];
 
+        const updateProduct = await Product.findOneAndUpdate(
+          {_id: preCartItem._id},
+          {$addToSet:
+            {orders: order, buyers: buyer}
+          },
+          {new: true, useFindAndModify: false}
+        )
+        console.log(`
+            index: ${index},
+            productId: ${preCartItem._id},
+            updatedProduct-orders: ${updateProduct.orders}
+            updatedProduct-buyers: ${updateProduct.buyers}
+          `);
+        }
+
+      // return {
+      //   ...updateUser._doc,
+      //   _id: updateUser._id
+      // };
       return {
-        ...user._doc,
+        ...result._doc,
+        _id: result._id
       };
     } catch (err) {
       throw err;

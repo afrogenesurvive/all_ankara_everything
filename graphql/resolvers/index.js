@@ -8,7 +8,7 @@ const rootResolver = {
   ...authResolver,
   ...userResolver,
   ...productResolver,
-  // ...orderResolver,
+  ...orderResolver,
   // ...reviewResolver,
 };
 
