@@ -375,8 +375,8 @@ module.exports = {
       throw err;
     }
   },
-  deleteOrder: async (args, req) => {
-    console.log("Resolver: deleteOrder...");
+  deleteOrderById: async (args, req) => {
+    console.log("Resolver: deleteOrderById...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
     }
@@ -387,7 +387,7 @@ module.exports = {
         {$pull: {orders: args.orderId}},
         {new: true, useFindAndModify: false}
       );
-      console.log('1',updateUser.orders);
+      // console.log('1',updateUser.orders);
       for (let index = 0; index < preOrder.products.length; index++) {
         let preOrderProduct = preOrder.products[index];
         const updateProduct = await Product.findOneAndUpdate(
@@ -395,7 +395,7 @@ module.exports = {
           {$pull: {orders: args.orderId}},
           {new: true, useFindAndModify: false}
         )
-        console.log('2',updateProduct.orders);
+        // console.log('2',updateProduct.orders);
       }
       const order = await Order.findByIdAndRemove(args.orderId);
         return {

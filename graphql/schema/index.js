@@ -394,8 +394,8 @@ module.exports = buildSchema(`
     updateOrderShipping(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
     updateOrderBillingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
     updateOrderShippingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
-    addOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!, newValue: Boolean!): Order
-    updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    addOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!, newValue: Boolean!): Order
 
     deleteOrderById(activityId: ID!, orderId: ID!): Order
     deleteOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order

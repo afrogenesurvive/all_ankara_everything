@@ -38,10 +38,7 @@ const orderSchema = new Schema({
     postalCode: {type:String},
   },
   status: [{
-    type: {
-      type: String,
-      enum: ['cancelled', 'held', 'paid', 'checkedOut','emailSent','confirmed','packaged','shipped','delivered','confirmedDelivery']
-    },
+    type: {type: String, enum: ['cancelled', 'held', 'paid', 'checkedOut','emailSent','confirmed','packaged','shipped','delivered','confirmedDelivery']},
     value: {type: Boolean},
     date: {type: Date},
     _id: false
