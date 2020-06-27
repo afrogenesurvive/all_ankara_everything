@@ -1234,7 +1234,7 @@ module.exports = {
       const encrypted = encryptor.encrypt(verfCode);
       // console.log('rando',rando,'verfCode',verfCode,'encrypted',encrypted);
       verfCode = encrypted;
-
+      console.log('verfCode',verfCode);
       const user = new User({
         password: hashedPassword,
         name: args.userInput.name,

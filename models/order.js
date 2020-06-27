@@ -7,7 +7,7 @@ const orderSchema = new Schema({
   time: {type: String},
   type: {type: String},
   subType: {type: String},
-  buyer: {type: Schema.Types.ObjectId,ref: 'Product'},
+  buyer: {type: Schema.Types.ObjectId,ref: 'User'},
   products: [{type: Schema.Types.ObjectId,ref: 'Product'}],
   tax: {
     description: {type: String},
@@ -43,7 +43,8 @@ const orderSchema = new Schema({
       enum: ['cancelled', 'held', 'paid', 'checkedOut','emailSent','confirmed','packaged','shipped','delivered','confirmedDelivery']
     },
     value: {type: Boolean},
-    date: {type: Date}
+    date: {type: Date},
+    _id: false
   }],
   feedback: {type: String}
 },

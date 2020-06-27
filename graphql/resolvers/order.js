@@ -26,7 +26,8 @@ module.exports = {
     }
     try {
       const orders = await Order.find({})
-
+      .populate('buyer')
+      .populate('products');
       return orders.map(order => {
         return transformOrder(order,);
       });
@@ -40,12 +41,9 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-
       const order = await Order.findById(args.orderId)
       .populate('buyer')
-      .populate('receiver')
-      .populate('lessons.ref');
-
+      .populate('products');
         return {
             ...order._doc,
             _id: order.id,
@@ -62,16 +60,317 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-      let fieldType = null;
       let resolverField = args.field;
       let resolverQuery = args.query;
       const query = {[resolverField]:resolverQuery};
       const orders = await Order.find(query)
-
+      .populate('buyer')
+      .populate('products');
+      return orders.map(order => {
+        return transformOrder(order);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getOrdersByFieldRegex: async (args, req) => {
+    console.log("Resolver: getOrderByFieldRegex...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      let resolverField = args.field;
+      const regExpQuery = new RegExp(args.query)
+      let resolverQuery = {$regex: regExpQuery, $options: 'i'};
+      const query = {[resolverField]:resolverQuery};
+      const orders = await Order.find(query)
+      .populate('buyer')
+      .populate('products');
       return orders.map(order => {
         return transformOrder(order);
 
       });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getOrdersByBillingAddress: async (args, req) => {
+    console.log("Resolver: getOrderByBillingAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const address = {
+        number: args.orderInput.billingAddressNumber,
+        street: args.orderInput.billingAddressStreet,
+        town: args.orderInput.billingAddressTown,
+        city: args.orderInput.billingAddressCity,
+        country: args.orderInput.billingAddressCountry,
+        postalCode: args.orderInput.billingAddressPostalCode
+      };
+      const orders = await Order.find({
+        billingAddress: address
+      })
+      .populate('buyer')
+      .populate('products');
+      return orders.map(order => {
+        return transformOrder(order);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getOrdersByShippingAddress: async (args, req) => {
+    console.log("Resolver: getOrderByShippingAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const address = {
+        number: args.orderInput.shippingAddressNumber,
+        street: args.orderInput.shippingAddressStreet,
+        town: args.orderInput.shippingAddressTown,
+        city: args.orderInput.shippingAddressCity,
+        country: args.orderInput.shippingAddressCountry,
+        postalCode: args.orderInput.shippingAddressPostalCode
+      };
+      const orders = await Order.find({
+        shippingAddress: address
+      })
+      .populate('buyer')
+      .populate('products');
+      return orders.map(order => {
+        return transformOrder(order);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  getOrdersByStatuses: async (args, req) => {
+    console.log("Resolver: getOrderByStatuses...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const status = {
+        statusType: args.orderInput.statusType,
+        statusValue: args.orderInput.statusValue,
+        statusDate: args.orderInput.statusDate
+      };
+      const orders = await Order.find({
+        // status: status
+        'status.type': args.orderInput.statusType,
+        'status.value': args.orderInput.statusValue
+      })
+      .populate('buyer')
+      .populate('products');
+      return orders.map(order => {
+        return transformOrder(order);
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateOrderSingleField: async (args, req) => {
+    console.log("Resolver: updateOrderSingleField...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const resolverField = args.field;
+      const resolverQuery = args.query;
+      query = {[resolverField]:resolverQuery};
+      const order = await Order.findOneAndUpdate(
+        {_id: args.orderId},
+        query,
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateOrderShipping: async (args, req) => {
+    console.log("Resolver: updateOrderShipping...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const shipping = {
+        amount: args.orderInput.shippingAmount,
+        description: args.orderInput.shippingDescription
+      }
+      const order = await Order.findOneAndUpdate(
+        {_id: args.orderId},
+        {shipping: shipping},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  addOrderStatus: async (args, req) => {
+    console.log("Resolver: addOrderStatus...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const status = {
+        type: args.orderInput.statusType,
+        value: args.orderInput.statusValue,
+        date: moment().format('YYYY-MM-DD')
+      }
+      const order = await Order.findOneAndUpdate(
+        {_id: args.orderId},
+        {$addToSet: {status: status}},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateOrderStatus: async (args, req) => {
+    console.log("Resolver: updateOrderStatus...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const status = {
+        type: args.orderInput.statusType,
+        value: args.orderInput.statusValue,
+        date: args.orderInput.statusDate
+      }
+      const order = await Order.findOneAndUpdate(
+        {
+          _id: args.orderId,
+          status: status
+        },
+        {'status.$.value': args.newValue},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  deleteOrderStatus: async (args, req) => {
+    console.log("Resolver: deleteOrderStatus...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const status = {
+        type: args.orderInput.statusType,
+        value: args.orderInput.statusValue,
+        date: args.orderInput.statusDate
+      }
+      const order = await Order.findOneAndUpdate(
+        {
+          _id: args.orderId,
+        },
+        {$pull: {status: status}},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateOrderBillingAddress: async (args, req) => {
+    console.log("Resolver: updateOrderBillingAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const billingAddress = {
+        number: args.orderInput.billingAddressNumber,
+        street: args.orderInput.billingAddressStreet,
+        town: args.orderInput.billingAddressTown,
+        city: args.orderInput.billingAddressCity,
+        country: args.orderInput.billingAddressCountry,
+        postalCode: args.orderInput.billingAddressPostalCode
+      }
+      const order = await Order.findOneAndUpdate(
+        {_id: args.orderId},
+        {billingAddress: billingAddress},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateOrderShippingAddress: async (args, req) => {
+    console.log("Resolver: updateOrderShippingAddress...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const shippingAddress = {
+        number: args.orderInput.shippingAddressNumber,
+        street: args.orderInput.shippingAddressStreet,
+        town: args.orderInput.shippingAddressTown,
+        city: args.orderInput.shippingAddressCity,
+        country: args.orderInput.shippingAddressCountry,
+        postalCode: args.orderInput.shippingAddressPostalCode
+      }
+      const order = await Order.findOneAndUpdate(
+        {_id: args.orderId},
+        {shippingAddress: shippingAddress},
+        {new: true, useFindAndModify: false}
+      )
+      .populate('buyer')
+      .populate('products');
+        return {
+            ...order._doc,
+            _id: order.id,
+            date: order.date,
+            type: order.type
+        };
     } catch (err) {
       throw err;
     }
@@ -82,9 +381,23 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
+      const preOrder = await Order.findById({_id: args.orderId});
+      const updateUser = await User.findOneAndUpdate(
+        {_id: preOrder.buyer},
+        {$pull: {orders: args.orderId}},
+        {new: true, useFindAndModify: false}
+      );
+      console.log('1',updateUser.orders);
+      for (let index = 0; index < preOrder.products.length; index++) {
+        let preOrderProduct = preOrder.products[index];
+        const updateProduct = await Product.findOneAndUpdate(
+          {_id: preOrderProduct},
+          {$pull: {orders: args.orderId}},
+          {new: true, useFindAndModify: false}
+        )
+        console.log('2',updateProduct.orders);
+      }
       const order = await Order.findByIdAndRemove(args.orderId);
-
-      // remove from user and products
         return {
             ...order._doc,
             _id: order.id,
@@ -102,8 +415,6 @@ module.exports = {
       .populate('cart');
       const datetime = moment().local().format("YYYY-MM-DD,hh:mm:ss a");
       const datetime2 = moment().local().format("YYYY-MM-DD,hh:mm:ss a").split(',');
-      console.log('1',datetime);
-      console.log('2',datetime2);
       const date = datetime2[0];
       const time = datetime2[1];
       const preCart = buyer.cart;
@@ -178,12 +489,12 @@ module.exports = {
         {_id: buyer._id},
         {
           $addToSet: {orders: order},
-          // cart: []
+          cart: []
         },
         {new: true, useFindAndModify: false}
       )
 
-      console.log('updateUser',updateUser.orders);
+      // console.log('updateUser',updateUser.orders);
       let updatedProducts = [];
       for (let index = 0; index < preCart.length; index++) {
         let preCartItem = preCart[index];
@@ -195,12 +506,12 @@ module.exports = {
           },
           {new: true, useFindAndModify: false}
         )
-        console.log(`
-            index: ${index},
-            productId: ${preCartItem._id},
-            updatedProduct-orders: ${updateProduct.orders}
-            updatedProduct-buyers: ${updateProduct.buyers}
-          `);
+        // console.log(`
+        //     index: ${index},
+        //     productId: ${preCartItem._id},
+        //     updatedProduct-orders: ${updateProduct.orders}
+        //     updatedProduct-buyers: ${updateProduct.buyers}
+        //   `);
         }
 
       // return {

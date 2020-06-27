@@ -686,6 +686,31 @@ module.exports = {
     }
   },
 
+  deleteProductById: async (args, req) => {
+    console.log("Resolver: deleteProductById...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      const activityUser = await User.findById({_id: args.activityId});
+      const preProduct = await Product.findById({_id: args.productId});
+      console.log('preProduct',preProduct,args.productId);
+      const isLister = preProduct.listedBy === args.activityId;
+      const isAdmin = activityUser.role === 'Admin';
+      if (isLister === false && isAdmin === false) {
+        console.log('...umm no! Only Admin or the Listing User may delete Products...');
+        throw new Error('...umm no! Only Admin or the Listing User may delete Products...');
+      }
+      const deleteProduct = await Product.findByIdAndRemove(args.productId)
+      return {
+        ...deleteProduct._doc,
+        _id: deleteProduct.id,
+        name: deleteProduct.name,
+      };
+    } catch (err) {
+      throw err;
+    }
+  },
   createProduct: async (args,req) => {
     console.log("Resolver: createProduct...");
     if (!req.isAuth) {
@@ -699,8 +724,8 @@ module.exports = {
         aaeId: args.productInput.aaeId
       });
       if (existingProduct1 || existingProduct2) {
-        console.log('Product like that exists already! Variety is the spice of ...something');
-        throw new Error('Product like that exists already! Variety is the spice of ...something');
+        console.log('Product like that exists already! Variety is the spice of ...check name and aaeId');
+        throw new Error('Product like that exists already! Variety is the spice of ...check name and aaeId');
       }
 
       const listedBy = await User.findById({_id: args.activityId});

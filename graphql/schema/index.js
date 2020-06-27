@@ -159,6 +159,7 @@ module.exports = buildSchema(`
     note: String
     notes: String
     payment: String
+    addressType: String
     billingAddressNumber: Int
     billingAddressStreet: String
     billingAddressTown: String
@@ -311,7 +312,8 @@ module.exports = buildSchema(`
     getOrderById(activityId: ID!, orderId: ID!): Order
     getOrdersByField(activityId: ID!, field: String!, query: String!): [Order]
     getOrdersByFieldRegex(activityId: ID!, field: String!, query: String!): [Order]
-    getOrdersByAddress(activityId: ID!, orderInput: OrderInput!): [Order]
+    getOrdersByBillingAddress(activityId: ID!, orderInput: OrderInput!): [Order]
+    getOrdersByShippingAddress(activityId: ID!, orderInput: OrderInput!): [Order]
     getOrdersByStatuses(activityId: ID!, orderInput: OrderInput!): [Order]
 
     getAllReviews(activityId: ID!): [Review]
@@ -320,7 +322,6 @@ module.exports = buildSchema(`
     getReviewsByFieldRegex(activityId: ID!, field: String!, query: String!): [Review]
     getReviewsByProduct(activityId: ID!, productId: ID!): [Review]
     getReviewsByAuthor(activityId: ID!, userId: ID!): [Review]
-
 
   }
 
@@ -391,8 +392,9 @@ module.exports = buildSchema(`
     createOrder(activityId: ID!, buyerId:ID!, orderInput: OrderInput!): Order
     updateOrderSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
     updateOrderShipping(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
-    updateOrderAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!, addressType: String!): Order
-    addOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    updateOrderBillingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    updateOrderShippingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    addOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!, newValue: Boolean!): Order
     updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
 
     deleteOrderById(activityId: ID!, orderId: ID!): Order
