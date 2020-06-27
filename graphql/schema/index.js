@@ -401,7 +401,7 @@ module.exports = buildSchema(`
     deleteOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
 
 
-    createReview(activityId: ID!, reviewInput: ReviewInput!): Review
+    createReview(activityId: ID!, userId: ID, reviewInput: ReviewInput!): Review
     updateReviewSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
 
     deleteReviewById(activityId: ID!, reviewId: ID!): Review

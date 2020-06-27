@@ -9,7 +9,7 @@ const rootResolver = {
   ...userResolver,
   ...productResolver,
   ...orderResolver,
-  // ...reviewResolver,
+  ...reviewResolver,
 };
 
 module.exports = rootResolver;

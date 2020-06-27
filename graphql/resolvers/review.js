@@ -6,7 +6,7 @@ const Product = require('../../models/product');
 const Order = require('../../models/order');
 const Review = require('../../models/review');
 const util = require('util');
-const moment = require('moment'); 
+const moment = require('moment');
 
 const { transformReview } = require('./merge');
 const { dateToString } = require('../../helpers/date');
@@ -116,148 +116,60 @@ module.exports = {
     console.log("Resolver: createReview...");
     try {
       const user = await User.findById({_id: args.userId})
-      // const lessonAttendees = await Lesson.aggregate([
-      //   // {$unwind: {path: '$sessions'}},
-      //   {$unwind: '$sessions'},
-      //   {$unwind: '$sessions.booked'},
-      //   // {$unwind: '$sessions.attended'},
-      //   // {$group: {_id:{booked:'$sessions.booked',attended:'$sessions.attended'}}}
-      //   // {$group: {_id:'$sessions'}}
-      //   // {$group: {_id:'$sessions',user:{$sum: '$sessions.booked'}}}
-      //   // {$group: {_id:'$sessions',user:{$sum: '$sessions.attended'}}}
-      //   // {$group: {_id:'$sessions.booked'}}
-      //   {$group: {_id:{lessonId:'$_id',lessonTitle:'$title',sessionTitle:'$sessions.title'},booked:{$addToSet: '$sessions.booked'}}},
-      //   // {$group: {_id:{lessonId:'$_id',sessionTitle:'$sessions.title'},attended:{$addToSet: '$sessions.attended'}}},
-      //   // {$group: {_id:'$_id',attended:{$addToSet: '$sessions.attended'}}}
-      //   // {$group: {_id:'$_id'}}
-      //   // {$group: {_id:'$sessions.attended'}}
-      //   // {$match: {_id.lessonId: {$eq: args.lessonId }}}
-      //   // {$match: {_id: {$eq: session }}}
-      //   // {$group: {_id:'$sessions.date', booked: { $addToSet: '$sessions.booked'}}},
-      //   // {$match: {_id: {$eq: sessionDate }}}
-      //   // {$group: {_id:'$sessions.title', date: { $addToSet: '$sessions.date'}}}
-      // ]);
-      const lessonAttendees = await Lesson.aggregate([
-        {$unwind: '$attendees'},
-        {$group: {_id: '$attendees'}}
+
+      const userOrderProducts = await Product.aggregate([
+        {$unwind: '$buyers'},
+        {$group: {_id: '$buyers'}},
+        // {$match: {
+        //   '_id.date': {$eq: sessionDate },
+        // }}
       ]);
-      const lessonAttendees2 = lessonAttendees.map(x => x = x._id)
-      const lessonAttendees3 = JSON.stringify(lessonAttendees2)
-      let x = {_id: args.userId};
+      console.log('user',user._id);
+      console.log('userOrderProducts',userOrderProducts.map(x =>x._id));
+      console.log('x',userOrderProducts.map(x =>x._id).includes(user._id));
+      console.log('y',userOrderProducts.map(x =>x._id).filter(x => x === user._id));
+      // const userOrderProducts = await Order.find({_id: {$in: userOders}})
 
-      let userIsLessonAttendee = lessonAttendees3.includes(user._id.toString());
-      // let userIsLessonAttendee = lessonAttendees2.filter(x => x === user._id);
-      // let userIsLessonAttendee2 = userIsLessonAttendee !== [];
-      console.log('userId',user._id,'lessonAttendees',lessonAttendees3,'userIsLessonAttendee',userIsLessonAttendee);
-      if (userIsLessonAttendee !== true) {
-        throw new Error('Ummm no! Only users whove attended a session of this class can review it');
-      }
+      // const datetime = moment().format('YYY-MM-DD,h:mm:ss a').split(',');
+      // const today = datetime[0];
+      // const time = datetime[1];
+      // const author = user;
+      // const product = await Product.findById({_id: args.productId});
+      // const canReview;
+      //
+      // const existingReview = await Review.findOne({author: author, product: product});
+      // if (existingReview) {
+      //   console.log('This user has already reviewed this lesson... One review per lesson per user please...');
+      //   throw new Error('This user has already reviewed this lesson... One review per lesson per user please...');
+      // }
+      // const review = new Review({
+      //   date: today,
+      //   type: args.reviewInput.type,
+      //   title: args.reviewInput.title,
+      //   product: product,
+      //   author: author,
+      //   body: args.reviewInput.body,
+      //   rating: args.reviewInput.rating
+      // });
+      // const result = await review.save();
+      // const updateProduct = await Product.findOneAndUpdate(
+      //   {_id: args.productId},
+      //   {$addToSet: {reviews: review} },
+      //   {new: true, useFindAndModify: false}
+      // )
+      // const updateAuthor = await User.findOneAndUpdate(
+      //   {_id: args.userId},
+      //   {$addToSet: {reviews: review} },
+      //   {new: true, useFindAndModify: false}
+      // )
+      //
+      // return {
+      //   ...updateAuthor._doc,
+      //   _id: updateAuthor.id,
+      //   email: updateAuthor.contact.email ,
+      //   name: updateAuthor.name,
+      // };
 
-      const today = new Date().toLocaleDateString().substr(0,10);
-      const time = new Date().toLocaleDateString().substr(11,5);
-      const author = user;
-      const lesson = await Lesson.findById({_id: args.lessonId});
-
-      const existingReview = await Review.findOne({author: author, lesson: lesson});
-      if (existingReview) {
-        throw new Error('This user has already reviewed this lesson... One review per lesson per user please...');
-      }
-      const review = new Review({
-        date: today,
-        type: args.reviewInput.type,
-        title: args.reviewInput.title,
-        lesson: lesson,
-        author: author,
-        body: args.reviewInput.body,
-        rating: args.reviewInput.rating
-      });
-
-      const result = await review.save();
-      const updateLesson = await Lesson.findOneAndUpdate({_id: args.lessonId},{$addToSet: {reviews: review} },{new: true, useFindAndModify: false})
-      const updateAuthor = await User.findOneAndUpdate(
-        {_id: args.userId},
-        {$addToSet: {reviews: review} },
-        {new: true, useFindAndModify: false}
-      )
-      .populate('perks')
-      .populate('promos')
-      .populate('friends')
-      .populate('likedLessons')
-      .populate('toTeachLessons')
-      .populate('bookedLessons.ref')
-      .populate('attendedLessons.ref')
-      .populate('taughtLessons.ref')
-      .populate('wishlist.ref')
-      .populate('cart.lesson')
-      .populate({
-        path:'reviews',
-        populate: {
-          path: 'author',
-          model: 'User'
-        }
-      })
-      .populate({
-        path:'reviews',
-        populate: {
-          path: 'lesson',
-          model: 'Lesson'
-        }
-      })
-      .populate({
-        path: 'messages',
-        populate: {
-          path: 'sender',
-          model: 'User'
-        }})
-      .populate({
-        path: 'messages',
-        populate: {
-          path: 'receiver',
-          model: 'User'
-        }})
-      .populate({
-        path: 'orders',
-        populate: {
-          path: 'buyer',
-          model: 'User'
-        }})
-      .populate({
-        path: 'orders',
-        populate: {
-          path: 'receiver',
-          model: 'User'
-        }})
-      .populate({
-        path: 'notifications',
-        populate: {
-          path: 'creator',
-          model: 'User'
-        }
-      })
-      .populate({
-        path: 'notifications',
-        populate: {
-          path: 'recipients',
-          model: 'User'
-        }
-      })
-      .populate({
-        path: 'notifications',
-        populate: {
-          path: 'lesson',
-          model: 'Lesson'
-        }
-      })
-      .populate('friendRequests.sender')
-      .populate('cancellations.lesson')
-      .populate('friendRequests.receiver');
-
-      return {
-        ...updateAuthor._doc,
-        _id: updateAuthor.id,
-        email: updateAuthor.contact.email ,
-        name: updateAuthor.name,
-      };
       // return {
       //   ...result._doc,
       //   date: result.date,
