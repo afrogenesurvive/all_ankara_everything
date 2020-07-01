@@ -121,7 +121,7 @@ module.exports = buildSchema(`
     payment: String
     billingAddress: OrderAddress
     shippingAddress: OrderAddress
-    status: [OrderStatus]
+    status: OrderStatus
     feedback: String
   }
   type OrderTax {
@@ -141,7 +141,18 @@ module.exports = buildSchema(`
     postalCode: String
   }
   type OrderStatus {
-    type: String
+    cancelled: OrderStatusObject
+    held: OrderStatusObject
+    paid: OrderStatusObject
+    checkedOut: OrderStatusObject
+    emailSent: OrderStatusObject
+    confirmed: OrderStatusObject
+    packaged: OrderStatusObject
+    shipped: OrderStatusObject
+    delivered: OrderStatusObject
+    confirmedDelivery: OrderStatusObject
+  }
+  type OrderStatusObject {
     value: Boolean
     date: String
   }
@@ -172,6 +183,7 @@ module.exports = buildSchema(`
     shippingAddressCity: String
     shippingAddressCountry: String
     shippingAddressPostalCode: String
+    status: String
     statusType: String
     statusValue: Boolean
     statusDate: String
@@ -257,14 +269,14 @@ module.exports = buildSchema(`
     product: Product
     author: User
     body: String
-    rating: Int
+    rating: Float
   }
   input ReviewInput {
     date: String,
     type: String,
     title: String,
     body: String,
-    rating: Int
+    rating: Float
   }
 
   type AuthData {
@@ -314,7 +326,7 @@ module.exports = buildSchema(`
     getOrdersByFieldRegex(activityId: ID!, field: String!, query: String!): [Order]
     getOrdersByBillingAddress(activityId: ID!, orderInput: OrderInput!): [Order]
     getOrdersByShippingAddress(activityId: ID!, orderInput: OrderInput!): [Order]
-    getOrdersByStatuses(activityId: ID!, orderInput: OrderInput!): [Order]
+    getOrdersByStatus(activityId: ID!, orderInput: OrderInput!): [Order]
 
     getAllReviews(activityId: ID!): [Review]
     getReviewById(activityId: ID!, reviewId: ID!): Review
@@ -394,17 +406,17 @@ module.exports = buildSchema(`
     updateOrderShipping(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
     updateOrderBillingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
     updateOrderShippingAddress(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
-    addOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
-    updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!, newValue: Boolean!): Order
+
+    updateOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
 
     deleteOrderById(activityId: ID!, orderId: ID!): Order
-    deleteOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!): Order
+    deleteOrderStatus(activityId: ID!, orderId: ID!, orderInput: OrderInput!):Order
 
 
-    createReview(activityId: ID!, userId: ID, reviewInput: ReviewInput!): Review
-    updateReviewSingleField(activityId: ID!, orderId: ID!, field: String!, query: String!): Order
+    createReview(activityId: ID!, userId: ID, productId: ID!, reviewInput: ReviewInput!): Review
+    updateReviewSingleField(activityId: ID!, reviewId: ID!, field: String!, query: String!): Review
 
-    deleteReviewById(activityId: ID!, reviewId: ID!): Review
+    deleteReview(activityId: ID!, reviewId: ID!): Review
 
   }
 

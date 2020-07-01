@@ -146,31 +146,32 @@ module.exports = {
       throw err;
     }
   },
-  getOrdersByStatuses: async (args, req) => {
-    console.log("Resolver: getOrderByStatuses...");
-    if (!req.isAuth) {
-      throw new Error('Unauthenticated!');
-    }
-    try {
-      const status = {
-        statusType: args.orderInput.statusType,
-        statusValue: args.orderInput.statusValue,
-        statusDate: args.orderInput.statusDate
-      };
-      const orders = await Order.find({
-        // status: status
-        'status.type': args.orderInput.statusType,
-        'status.value': args.orderInput.statusValue
-      })
-      .populate('buyer')
-      .populate('products');
-      return orders.map(order => {
-        return transformOrder(order);
-      });
-    } catch (err) {
-      throw err;
-    }
-  },
+  // getOrdersByStatus: async (args, req) => {
+  //   console.log("Resolver: getOrderByStatus...");
+  //   if (!req.isAuth) {
+  //     throw new Error('Unauthenticated!');
+  //   }
+  //   try {
+  //     const status = {
+  //       type: args.orderInput.statusType,
+  //       value: args.orderInput.statusValue,
+  //       date: args.orderInput.statusDate
+  //     };
+  //     let query = 'status.'+status.type+'.value';
+  //     let query2 = 'status.'+status.type+'';
+  //     console.log(query,query2,status.value);
+  //     const orders = await Order.find({
+  //       query: status.value
+  //     })
+  //     .populate('buyer')
+  //     .populate('products');
+  //     return orders.map(order => {
+  //       return transformOrder(order);
+  //     });
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // },
   updateOrderSingleField: async (args, req) => {
     console.log("Resolver: updateOrderSingleField...");
     if (!req.isAuth) {
@@ -224,55 +225,28 @@ module.exports = {
       throw err;
     }
   },
-  addOrderStatus: async (args, req) => {
-    console.log("Resolver: addOrderStatus...");
-    if (!req.isAuth) {
-      throw new Error('Unauthenticated!');
-    }
-    try {
-      const status = {
-        type: args.orderInput.statusType,
-        value: args.orderInput.statusValue,
-        date: moment().format('YYYY-MM-DD')
-      }
-      const order = await Order.findOneAndUpdate(
-        {_id: args.orderId},
-        {$addToSet: {status: status}},
-        {new: true, useFindAndModify: false}
-      )
-      .populate('buyer')
-      .populate('products');
-        return {
-            ...order._doc,
-            _id: order.id,
-            date: order.date,
-            type: order.type
-        };
-    } catch (err) {
-      throw err;
-    }
-  },
   updateOrderStatus: async (args, req) => {
     console.log("Resolver: updateOrderStatus...");
     if (!req.isAuth) {
       throw new Error('Unauthenticated!');
     }
     try {
-      const status = {
-        type: args.orderInput.statusType,
+      const datetime2 = moment().local().format("YYYY-MM-DD,hh:mm:ss a").split(',');
+      const date = datetime2[0];
+      const time = datetime2[1];
+      const status = args.orderInput.status;
+      const statusObject = {
         value: args.orderInput.statusValue,
-        date: args.orderInput.statusDate
-      }
-      const order = await Order.findOneAndUpdate(
-        {
-          _id: args.orderId,
-          status: status
-        },
-        {'status.$.value': args.newValue},
-        {new: true, useFindAndModify: false}
-      )
+        date: date,
+      };
+      const query = 'status.'+args.orderInput.statusType+'';
+      const order = await Order.findOneAndUpdate({_id:args.orderId},
+        {[query]: statusObject},
+        {new: true, useFindAndModify: false})
       .populate('buyer')
-      .populate('products');
+      .populate('receiver')
+      .populate('lessons.ref');
+
         return {
             ...order._doc,
             _id: order.id,
@@ -283,36 +257,67 @@ module.exports = {
       throw err;
     }
   },
-  deleteOrderStatus: async (args, req) => {
-    console.log("Resolver: deleteOrderStatus...");
-    if (!req.isAuth) {
-      throw new Error('Unauthenticated!');
-    }
-    try {
-      const status = {
-        type: args.orderInput.statusType,
-        value: args.orderInput.statusValue,
-        date: args.orderInput.statusDate
-      }
-      const order = await Order.findOneAndUpdate(
-        {
-          _id: args.orderId,
-        },
-        {$pull: {status: status}},
-        {new: true, useFindAndModify: false}
-      )
-      .populate('buyer')
-      .populate('products');
-        return {
-            ...order._doc,
-            _id: order.id,
-            date: order.date,
-            type: order.type
-        };
-    } catch (err) {
-      throw err;
-    }
-  },
+  // addOrderStatus: async (args, req) => {
+  //   console.log("Resolver: addOrderStatus...");
+  //   if (!req.isAuth) {
+  //     throw new Error('Unauthenticated!');
+  //   }
+  //   try {
+  //     const status = {
+  //       type: args.orderInput.statusType,
+  //       value: args.orderInput.statusValue,
+  //       date: moment().format('YYYY-MM-DD')
+  //     }
+  //     const statusTypes = ['cancelled', 'held', 'paid', 'checkedOut','emailSent','confirmed','packaged','shipped','delivered','confirmedDelivery'];
+  //     console.log(statusTypes.includes(status.type));
+  //     const order = await Order.findOneAndUpdate(
+  //       {_id: args.orderId},
+  //       // {status: []},
+  //       {$addToSet: {status: status}},
+  //       {new: true, useFindAndModify: false}
+  //     )
+  //     .populate('buyer')
+  //     .populate('products');
+  //       return {
+  //           ...order._doc,
+  //           _id: order.id,
+  //           date: order.date,
+  //           type: order.type
+  //       };
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // },
+  // deleteOrderStatus: async (args, req) => {
+  //   console.log("Resolver: deleteOrderStatus...");
+  //   if (!req.isAuth) {
+  //     throw new Error('Unauthenticated!');
+  //   }
+  //   try {
+  //     const status = {
+  //       type: args.orderInput.statusType,
+  //       value: args.orderInput.statusValue,
+  //       date: args.orderInput.statusDate
+  //     }
+  //     const order = await Order.findOneAndUpdate(
+  //       {
+  //         _id: args.orderId,
+  //       },
+  //       {$pull: {status: status}},
+  //       {new: true, useFindAndModify: false}
+  //     )
+  //     .populate('buyer')
+  //     .populate('products');
+  //       return {
+  //           ...order._doc,
+  //           _id: order.id,
+  //           date: order.date,
+  //           type: order.type
+  //       };
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // },
   updateOrderBillingAddress: async (args, req) => {
     console.log("Resolver: updateOrderBillingAddress...");
     if (!req.isAuth) {
@@ -469,18 +474,48 @@ module.exports = {
           country: args.orderInput.shippingAddressCountry,
           postalCode: args.orderInput.shippingAddressPostalCode,
         },
-        status: [
-          {
-            type: 'checkedOut',
-            value: true,
-            date: date
+        status: {
+          cancelled: {
+            value: false,
+            date: 0,
           },
-          {
-            type: 'paid',
+          held: {
+            value: false,
+            date: 0,
+          },
+          paid: {
             value: true,
-            date: date
+            date: date,
+          },
+          checkedOut: {
+            value: true,
+            date: date,
+          },
+          emailSent: {
+            value: false,
+            date: 0,
+          },
+          confirmed: {
+            value: false,
+            date: 0,
+          },
+          packaged: {
+            value: false,
+            date: 0,
+          },
+          shipped: {
+            value: false,
+            date: 0,
+          },
+          delivered: {
+            value: false,
+            date: 0,
+          },
+          confirmedDelivery: {
+            value: false,
+            date: 0,
           }
-        ],
+        },
         feedback: ''
       });
 

@@ -75,6 +75,28 @@ module.exports = {
       throw err;
     }
   },
+  getReviewsByFieldRegex: async (args, req) => {
+    console.log("Resolver: getReviewByFieldRegex...");
+    if (!req.isAuth) {
+      throw new Error('Unauthenticated!');
+    }
+    try {
+      let resolverField = args.field;
+      const regExpQuery = new RegExp(args.query)
+      let resolverQuery = {$regex: regExpQuery, $options: 'i'};
+      const query = {[resolverField]:resolverQuery};
+      const reviews = await Review.find(query)
+      .populate('author')
+      .populate('lesson');
+
+      return reviews.map(review => {
+        return transformReview(review);
+
+      });
+    } catch (err) {
+      throw err;
+    }
+  },
   updateReviewSingleField: async (args, req) => {
     console.log("Resolver: updateReviewField...");
 
@@ -85,7 +107,11 @@ module.exports = {
       const resolverField = args.field;
       const resolverQuery = args.query;
       const query = {[resolverField]:resolverQuery};
-      const review = await Review.findOneAndUpdate({_id:args.reviewId},query,{new: true, useFindAndModify: false});
+      const review = await Review.findOneAndUpdate(
+        {_id:args.reviewId},
+        query,
+        {new: true, useFindAndModify: false}
+      );
 
       return {
         ...review._doc,
@@ -102,11 +128,25 @@ module.exports = {
       throw new Error('Unauthenticated!');
     }
     try {
-      const perk = await Review.findByIdAndRemove(args.perkId);
+      const preReview = await Review.findById({_id: args.reviewId});
+
+      const review = await Review.findByIdAndRemove(
+        {_id: args.reviewId},
+        {new: true, useFindAndModify: false}
+      );
+      const updateAuthor = await User.findOneAndUpdate(
+        {_id: review.author},
+        {$pull: {reviews: preReview._id}},
+        {new: true, useFindAndModify: false}
+      )
+      const updateProduct = await Product.findOneAndUpdate(
+        {_id: review.product},
+        {$pull: {reviews: preReview._id}},
+        {new: true, useFindAndModify: false}
+      )
       return {
-          ...perk._doc,
-          _id: perk.id,
-          name: perk.name
+          ...review._doc,
+          _id: review.id
       };
     } catch (err) {
       throw err;
@@ -117,52 +157,60 @@ module.exports = {
     try {
       const user = await User.findById({_id: args.userId})
 
-      const userOrderProducts = await Product.aggregate([
-        {$unwind: '$buyers'},
-        {$group: {_id: '$buyers'}},
-        // {$match: {
-        //   '_id.date': {$eq: sessionDate },
-        // }}
-      ]);
-      console.log('user',user._id);
-      console.log('userOrderProducts',userOrderProducts.map(x =>x._id));
-      console.log('x',userOrderProducts.map(x =>x._id).includes(user._id));
-      console.log('y',userOrderProducts.map(x =>x._id).filter(x => x === user._id));
+      // const userOrderProducts = await Product.aggregate([
+      //   {$unwind: '$buyers'},
+      //   {$group: {_id: '$buyers'}},
+      //   // {$match: {
+      //   //   '_id.date': {$eq: sessionDate },
+      //   // }}
+      // ]);
+      // console.log('user',user._id);
+      // console.log('userOrderProducts',userOrderProducts.map(x =>x._id));
+      // console.log('x',userOrderProducts.map(x =>x._id).includes(product._id));
+      // console.log('y',userOrderProducts.map(x =>x._id).filter(x => x === user._id));
       // const userOrderProducts = await Order.find({_id: {$in: userOders}})
 
-      // const datetime = moment().format('YYY-MM-DD,h:mm:ss a').split(',');
-      // const today = datetime[0];
-      // const time = datetime[1];
-      // const author = user;
-      // const product = await Product.findById({_id: args.productId});
-      // const canReview;
-      //
-      // const existingReview = await Review.findOne({author: author, product: product});
-      // if (existingReview) {
-      //   console.log('This user has already reviewed this lesson... One review per lesson per user please...');
-      //   throw new Error('This user has already reviewed this lesson... One review per lesson per user please...');
-      // }
-      // const review = new Review({
-      //   date: today,
-      //   type: args.reviewInput.type,
-      //   title: args.reviewInput.title,
-      //   product: product,
-      //   author: author,
-      //   body: args.reviewInput.body,
-      //   rating: args.reviewInput.rating
-      // });
-      // const result = await review.save();
-      // const updateProduct = await Product.findOneAndUpdate(
-      //   {_id: args.productId},
-      //   {$addToSet: {reviews: review} },
-      //   {new: true, useFindAndModify: false}
-      // )
-      // const updateAuthor = await User.findOneAndUpdate(
-      //   {_id: args.userId},
-      //   {$addToSet: {reviews: review} },
-      //   {new: true, useFindAndModify: false}
-      // )
-      //
+      const datetime = moment().format('YYY-MM-DD,h:mm:ss a').split(',');
+      const today = datetime[0];
+      const time = datetime[1];
+      const author = user;
+      const product = await Product.findById({_id: args.productId});
+      const hasBought = product.buyers.includes(user._id);
+      const existingReview = await Review.findOne({author: author, product: product});
+      console.log(`
+          hasBought: ${hasBought},
+          existingReview: ${existingReview}
+        `);
+      if (hasBought !== true) {
+        console.log('...umm no! You can only review products youve bought');
+        throw new Error('...umm no! You can only review products youve bought');
+      }
+      if (existingReview) {
+        console.log('This user has already reviewed this product... One review per product per user please...');
+        throw new Error('This user has already reviewed this product... One review per product per user please...');
+      }
+      const review = new Review({
+        date: today,
+        type: args.reviewInput.type,
+        title: args.reviewInput.title,
+        product: product,
+        author: author,
+        body: args.reviewInput.body,
+        rating: args.reviewInput.rating
+      });
+
+      const result = await review.save();
+      const updateProduct = await Product.findOneAndUpdate(
+        {_id: args.productId},
+        {$addToSet: {reviews: review} },
+        {new: true, useFindAndModify: false}
+      )
+      const updateAuthor = await User.findOneAndUpdate(
+        {_id: args.userId},
+        {$addToSet: {reviews: review} },
+        {new: true, useFindAndModify: false}
+      )
+
       // return {
       //   ...updateAuthor._doc,
       //   _id: updateAuthor.id,
@@ -170,16 +218,16 @@ module.exports = {
       //   name: updateAuthor.name,
       // };
 
-      // return {
-      //   ...result._doc,
-      //   date: result.date,
-      //   type: result.type,
-      //   title: result.title,
-      //   lesson: result.lesson,
-      //   author: result.author,
-      //   body: result.body,
-      //   rating: result.rating
-      // };
+      return {
+        ...result._doc,
+        date: result.date,
+        type: result.type,
+        title: result.title,
+        lesson: result.lesson,
+        author: result.author,
+        body: result.body,
+        rating: result.rating
+      };
     } catch (err) {
       throw err;
     }

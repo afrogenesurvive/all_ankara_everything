@@ -37,12 +37,48 @@ const orderSchema = new Schema({
     country: {type:String},
     postalCode: {type:String},
   },
-  status: [{
-    type: {type: String, enum: ['cancelled', 'held', 'paid', 'checkedOut','emailSent','confirmed','packaged','shipped','delivered','confirmedDelivery']},
-    value: {type: Boolean},
-    date: {type: Date},
-    _id: false
-  }],
+  status: {
+    cancelled: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    held: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    paid: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    checkedOut: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    emailSent: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    confirmed: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    packaged: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    shipped: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    delivered: {
+      value: {type: Boolean},
+      date: {type: Date},
+    },
+    confirmedDelivery: {
+      value: {type: Boolean},
+      date: {type: Date},
+    }
+  },
   feedback: {type: String}
 },
   { timestamps: true }
