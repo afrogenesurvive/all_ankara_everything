@@ -29,7 +29,7 @@
     "path": "^0.12.7",
     "s3": "^4.4.0",
     "simple-encryptor": "^4.0.0",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.4.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
